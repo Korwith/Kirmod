@@ -1,0 +1,21 @@
+# Built-in texture packs, in the order shown. FOLDER=TERRAIN_RESOLUTION
+# Each folder is a 1.3.2 texture pack (pack.txt holds its name and description).
+Candy Texture Pack=16
+Cartoon Texture Pack=32
+City Texture Pack=32
+Fantasy Texture Pack=32
+Natural Texture Pack=32
+Pattern Texture Pack=32
+Plastic Texture Pack=16
+Steampunk Texture Pack=32
+Super Cute Texture Pack=16
+Chinese Mythology Mash-up=16
+Festive Mash-up=16
+Greek Mythology Mash-up=32
+Halloween Mash-up=16
+Mass Effect Mash-up=16
+Norse Mythology Mash-up=32
+Pirates of the Caribbean Mash-up=32
+[Other]
+Classic Faithful 32x=32
+Classic Faithful 64x=64

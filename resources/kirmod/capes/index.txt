@@ -1,0 +1,82 @@
+[Ownership Capes]
+Pan.png
+Migrator.png
+Vanilla.png
+Common.png
+Hero.png
+Twisted.png
+[Staff Capes]
+Mojang (Classic).png
+Xbox 360.png
+4J Studios.png
+Mojang.png
+Mojang Studios.png
+[Physical Event Capes]
+Minecon 2011.png=MINECON 2011 Cape
+MINECON 2012.png
+MINECON 2013.png
+MINECON 2015.png
+MINECON 2016.png
+Minecraft Experience.png
+Moonlight Trail.png
+Crafter.png
+[Virtual Event Capes]
+Founder's.png
+Cherry Blossom.png
+Follower's.png
+Purple Heart.png
+15th Anniversary.png
+MCC 15th Year.png
+Mojang Office.png
+Home.png
+Menace.png
+Yearn.png
+Copper.png
+Zombie Horse.png
+Builder.png
+Aurora.png
+Witch.png
+[Personal Capes]
+Bacon.png
+Millionth Customer.png
+dB.png
+JulianClark's.png
+Cheapsh0t's.png
+Spade.png
+Prismarine.png
+Turtle.png
+Birthday.png
+Valentine.png
+Oxeye.png
+Blueprint.png
+[Competition Capes]
+Scrolls Champion.png
+Cobalt.png
+[Volunteer Capes]
+Translator.png
+Chinese Translator.png
+Mojira Moderator.png
+Realms MapMaker.png
+[Temporary Capes]
+Christmas 2010.png
+New Years 2011.png
+Xbox 1st Birthday.png
+[API Testing Capes]
+size-m.png
+Snail.png
+Frog.png
+[Unused Capes]
+Unused 3.png=Unused Cape #3
+Unused 4.png=Unused Cape #4
+Unused 5.png=Unused Cape #5
+Unused 6.png=Unused Cape #6
+Unused 7.png=Unused Cape #7
+Unused 8.png=Unused Cape #8
+Unused 9.png=Unused Cape #9
+Unused 10.png=Unused Cape #10
+Unused 11.png=Unused Cape #11
+Unused 12.png=Unused Cape #12
+Unused 13.png=Unused Cape #13
+Unused 14.png=Unused Cape #14
+Unused 15.png=Unused Cape #15
+Unused 16.png=Unused Cape #16
