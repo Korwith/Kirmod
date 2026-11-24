@@ -43,6 +43,12 @@ fi
 echo "$MCP_SHA256  $WORK_DIR/mcp72.zip" | sha256sum -c -
 "$PYTHON" -m zipfile -e "$WORK_DIR/mcp72.zip" "$MCP_DIR"
 chmod +x "$MCP_DIR"/*.sh
+# MCP refuses to run as root (to protect wine prefixes), but CI containers run as root.
+if [ "$(id -u)" = 0 ]; then
+    CMDS="$MCP_DIR/runtime/commands.py"
+    sed -i 's/if not os\.getuid():/if False:/' "$CMDS"
+    grep -q 'if False:  # pylint' "$CMDS" || { echo "MCP root-check patch did not apply" >&2; exit 1; }
+fi
 
 log "Downloading Minecraft 1.3.2 client and LWJGL"
 BIN="$MCP_DIR/jars/bin"
