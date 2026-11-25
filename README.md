@@ -16,6 +16,19 @@ so each run uses MCPCommit's main branch as it is at that moment). The settings 
 The result is `mod_Kirmod-<version>.zip` in the run's artifacts, for `.minecraft/mods/`. Pushing a tag like `v1.36`
 also publishes it as a GitHub release.
 
+### Kirmod Lite
+
+Every push also builds `mod_Kirmod-Lite-<version>.zip` as a second artifact (and release file). It is the same mod
+without the Texture Packs, Skin Packs and Capes screens, their header buttons and commands, and the bundled packs and
+capes, so it is much smaller. The block textures (chests, storage blocks, rubies, sticky pistons) and HD texture pack
+support stay, and vanilla's texture pack screen works as usual. `ci/make-lite.sh` lays it out in `build/lite/`: a copy
+of `src/` with `KirEdition.LITE` set to `true`, `resources/` without `kirmod/texturepacks`, `skins` and `capes`, and an
+`omnimcp.json` that leaves the three screens' classes out of the zip.
+
+```bash
+ci/make-lite.sh && python3 ../MCPCommit/backend/build_mod.py all --config build/lite/omnimcp.json --out dist
+```
+
 To build locally (Python 3.8+, JDK 8):
 
 ```bash

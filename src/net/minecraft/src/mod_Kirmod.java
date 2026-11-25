@@ -201,8 +201,12 @@ public class mod_Kirmod extends BaseMod
 
         // Writes the defaults, including the KEY.enabled switches, on first start.
         saveConfig();
-        KirSkins.load();
-        KirCapes.load();
+        if (!KirEdition.LITE)
+        {
+            KirSkins.load();
+            KirCapes.load();
+        }
+
         ModLoader.setInGameHook(this, true, false);
         ModLoader.setInGUIHook(this, true, false);
 
@@ -217,9 +221,13 @@ public class mod_Kirmod extends BaseMod
 
         registerMainCommand();
         KirRename.registerCommands();
-        KirCapes.registerCommand();
-        KirSkins.registerCommand();
-        KirTexturePacks.registerCommand();
+
+        if (!KirEdition.LITE)
+        {
+            KirCapes.registerCommand();
+            KirSkins.registerCommand();
+            KirTexturePacks.registerCommand();
+        }
     }
 
     /**
@@ -309,8 +317,13 @@ public class mod_Kirmod extends BaseMod
         }
 
         KirInteraction.showClientMessages(mc);
-        KirCapes.update(mc);
-        KirSkins.update(mc);
+
+        if (!KirEdition.LITE)
+        {
+            KirCapes.update(mc);
+            KirSkins.update(mc);
+        }
+
         KirTexturePacks.update(mc);
 
         try

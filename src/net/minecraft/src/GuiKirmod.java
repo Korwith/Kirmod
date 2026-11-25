@@ -249,7 +249,13 @@ public class GuiKirmod extends GuiScreen
         }
 
         var4 = Math.min(var4, Math.max(70, this.width / 4));
-        int var10 = HEADER_H + 6 + this.getFlatButtonWidth("Music...") + this.getFlatButtonWidth("Capes...") + this.getFlatButtonWidth("Skin Packs...") + this.getFlatButtonWidth("Texture Packs...") + 2 + MIN_SEARCH_W;
+        int var10 = HEADER_H + 6 + this.getFlatButtonWidth("Music...") + 2 + MIN_SEARCH_W;
+
+        if (!KirEdition.LITE)
+        {
+            var10 += this.getFlatButtonWidth("Capes...") + this.getFlatButtonWidth("Skin Packs...") + this.getFlatButtonWidth("Texture Packs...");
+        }
+
         int var11 = this.width - 2 * MARGIN;
 
         // Two columns of options when they fit next to the right column (1.32), else one, as before.
@@ -280,9 +286,15 @@ public class GuiKirmod extends GuiScreen
         int var1 = this.right;
         var1 = this.addFlatButton(CLOSE_ID, var1, MARGIN, "x", HEADER_H);
         var1 = this.addFlatButton(MUSIC_ID, var1 - 2, MARGIN, "Music...", 0);
-        var1 = this.addFlatButton(CAPES_ID, var1 - 2, MARGIN, "Capes...", 0);
-        var1 = this.addFlatButton(SKINS_ID, var1 - 2, MARGIN, "Skin Packs...", 0);
-        var1 = this.addFlatButton(TEXTURE_PACKS_ID, var1 - 2, MARGIN, "Texture Packs...", 0);
+
+        // Kirmod Lite (KirEdition) has no texture pack, skin or cape screens.
+        if (!KirEdition.LITE)
+        {
+            var1 = this.addFlatButton(CAPES_ID, var1 - 2, MARGIN, "Capes...", 0);
+            var1 = this.addFlatButton(SKINS_ID, var1 - 2, MARGIN, "Skin Packs...", 0);
+            var1 = this.addFlatButton(TEXTURE_PACKS_ID, var1 - 2, MARGIN, "Texture Packs...", 0);
+        }
+
         this.searchX = this.left + 6;
         this.searchY = MARGIN + (HEADER_H - 8) / 2;
         this.searchRight = var1 - 2;
@@ -1074,15 +1086,27 @@ public class GuiKirmod extends GuiScreen
         {
             case TEXTURE_PACKS_ID:
                 // Picking a pack there reloads the textures (KirTexturePacks.select()).
-                this.mc.displayGuiScreen(new GuiKirmodTexturePacks(this));
+                if (!KirEdition.LITE)
+                {
+                    this.mc.displayGuiScreen(new GuiKirmodTexturePacks(this));
+                }
+
                 break;
 
             case SKINS_ID:
-                this.mc.displayGuiScreen(new GuiKirmodSkins(this));
+                if (!KirEdition.LITE)
+                {
+                    this.mc.displayGuiScreen(new GuiKirmodSkins(this));
+                }
+
                 break;
 
             case CAPES_ID:
-                this.mc.displayGuiScreen(new GuiKirmodCapes(this));
+                if (!KirEdition.LITE)
+                {
+                    this.mc.displayGuiScreen(new GuiKirmodCapes(this));
+                }
+
                 break;
 
             case MUSIC_ID:
@@ -1090,7 +1114,7 @@ public class GuiKirmod extends GuiScreen
                 break;
 
             case RESET_ID:
-                this.mc.displayGuiScreen(new GuiYesNo(this, "Reset every Kirmod setting to its default?", "Your cape and skin are kept.", RESET_ID));
+                this.mc.displayGuiScreen(new GuiYesNo(this, "Reset every Kirmod setting to its default?", KirEdition.LITE ? "" : "Your cape and skin are kept.", RESET_ID));
                 break;
 
             case CLOSE_ID:
@@ -2287,7 +2311,7 @@ public class GuiKirmod extends GuiScreen
 
                 case RESET_ID:
                     var2.add("§eReset to Defaults");
-                    var2.add("Puts every Kirmod setting, in every category, back to its default value. Asks first. Your cape and skin are kept.");
+                    var2.add("Puts every Kirmod setting, in every category, back to its default value. Asks first." + (KirEdition.LITE ? "" : " Your cape and skin are kept."));
                     break;
 
                 default:

@@ -485,7 +485,8 @@ public class KirTexturePacks
             return;
         }
 
-        if (mc.currentScreen != null && mc.currentScreen.getClass() == GuiTexturePacks.class)
+        // Kirmod Lite has no texture pack screen of its own and keeps vanilla's.
+        if (!KirEdition.LITE && mc.currentScreen != null && mc.currentScreen.getClass() == GuiTexturePacks.class)
         {
             mc.displayGuiScreen(new GuiKirmodTexturePacks(((GuiTexturePacks)mc.currentScreen).guiScreen));
         }
