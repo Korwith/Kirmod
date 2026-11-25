@@ -556,6 +556,12 @@ public class KirTexturePacks
             {
                 KirTexturePacks.update(ModLoader.getMinecraftInstance());
                 KirLocalGame.install(ModLoader.getMinecraftInstance());
+
+                // In a world mod_Kirmod's tick runs the music player; at the main menu only this does (1.36).
+                if (ModLoader.getMinecraftInstance().theWorld == null)
+                {
+                    KirMusic.update(ModLoader.getMinecraftInstance());
+                }
             }
             catch (Throwable var2)
             {

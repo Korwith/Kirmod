@@ -22,7 +22,7 @@ package net.minecraft.src;
 public class KirPlugin
 {
     /** Kirmod itself; the first section of the sidebar. */
-    public static final KirPlugin KIRMOD = new KirPlugin("Kirmod", "1.35", "Kirmod's own settings.", 331);
+    public static final KirPlugin KIRMOD = new KirPlugin("Kirmod", "1.36", "Kirmod's own settings.", 331);
 
     private final String name;
     private final String version;

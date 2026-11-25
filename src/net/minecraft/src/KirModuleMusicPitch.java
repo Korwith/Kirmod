@@ -15,7 +15,7 @@ import paulscode.sound.Source;
  * Every frame, if that source's pitch differs from the setting, it is set through the sound system, so
  * each new song is shifted as soon as it starts and a change applies to the song already playing. Game
  * sounds and music discs use other sources and are left alone. Like a record played faster or slower,
- * the music's speed changes with its pitch.
+ * the music's speed changes with its pitch. Since 1.36 it is set in the Music screen.
  */
 public class KirModuleMusicPitch extends KirModule
 {
@@ -53,7 +53,7 @@ public class KirModuleMusicPitch extends KirModule
 
     public String getCategory()
     {
-        return CATEGORY_OTHER;
+        return CATEGORY_MUSIC;
     }
 
     public String[] getTooltip()

@@ -7,10 +7,12 @@ import net.minecraft.client.Minecraft;
 /**
  * Music Frequency: changes the wait between songs.
  *
- * SoundManager counts its private ticksBeforeMusic down and sets a new vanilla delay whenever a song
- * starts. Whenever the countdown goes up (a new song started) or is longer than the setting allows, it
- * is replaced with a delay from the current setting. The short wait for the first song after startup
- * is left alone.
+ * Since 1.36 the setting lives in the Music screen (GuiKirmodMusic, category CATEGORY_MUSIC, which the
+ * settings screen doesn't list) and Kirmod's music player (KirMusic) waits these delays between songs.
+ * Only if the player can't hook the sound manager does this fall back to the old way: SoundManager
+ * counts its private ticksBeforeMusic down and sets a new vanilla delay whenever a song starts; whenever
+ * the countdown goes up (a new song started) or is longer than the setting allows, it is replaced with
+ * a delay from the current setting. The short wait for the first song after startup is left alone.
  */
 public class KirModuleMusic extends KirModule
 {
@@ -31,7 +33,12 @@ public class KirModuleMusic extends KirModule
 
     public String getCategory()
     {
-        return CATEGORY_OTHER;
+        return CATEGORY_MUSIC;
+    }
+
+    protected void onValueChanged()
+    {
+        KirMusic.onFrequencyChanged();
     }
 
     public String[] getTooltip()
@@ -64,7 +71,7 @@ public class KirModuleMusic extends KirModule
 
     public void update(Minecraft mc)
     {
-        if (fieldTicksBeforeMusic == null || mc.sndManager == null)
+        if (KirMusic.isAvailable() || fieldTicksBeforeMusic == null || mc.sndManager == null)
         {
             return;
         }

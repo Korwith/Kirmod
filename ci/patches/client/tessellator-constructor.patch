@@ -1,0 +1,14 @@
+KirTessellator extends Tessellator, whose only constructor is private in vanilla 1.3.2.
+This only makes it compile: Tessellator is listed in "exclude", so the changed class is never shipped.
+
+--- a/net/minecraft/src/Tessellator.java
++++ b/net/minecraft/src/Tessellator.java
+@@ -124,7 +124,7 @@
+     /** The size of the buffers used (in integers). */
+     private int bufferSize;
+ 
+-    private Tessellator(int par1)
++    protected Tessellator(int par1)
+     {
+         this.bufferSize = par1;
+         this.byteBuffer = GLAllocation.createDirectByteBuffer(par1 * 4);

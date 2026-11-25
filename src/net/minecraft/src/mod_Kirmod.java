@@ -39,8 +39,12 @@ import net.minecraft.client.Minecraft;
  *   - KirModuleIsometricDirection  Isometric Direction (Camera)
  *   - KirModuleIsometricDistance   Isometric Distance (a slider, Camera)
  *   - KirModulePanorama        Panorama Screenshots (Camera; from PanoramaAssist; all four use KirCamera)
- *   - KirModuleMusic           Music Frequency (Other)
- *   - KirModuleMusicPitch      Music Pitch (a slider, Other)
+ *   - KirModuleMusic           Music Frequency (Music)
+ *   - KirModuleMusicPitch      Music Pitch (a slider, Music)
+ *   - KirModuleMusicOption     Order, Sound Test, 0x10c, Music Discs, Nether and End Soundtrack (Music)
+ *
+ * The Music category (1.36) is not listed in the settings screen: its modules are set in the Music screen
+ * (GuiKirmodMusic, the header's "Music..."), where the soundtrack is picked. KirMusic plays the music.
  *   - KirModuleRenderCrashGuard  Render Crash Guard (Other; from EndermanCrashFix)
  *   - KirModuleOptifineRenderFix OptiFine Render Fix (OptiFine Patches; KirPlayerManager sends chunks out to the render distance)
  *   - KirModuleMultiCoreChunks Multi-Core Chunks (OptiFine Patches; KirChunkBuilder, KirChunkCache, KirTessellator)
@@ -107,6 +111,12 @@ public class mod_Kirmod extends BaseMod
     public static final KirModuleDarkThemeTint DARK_THEME_TINT = new KirModuleDarkThemeTint();
     public static final KirModuleMusic MUSIC_FREQUENCY = new KirModuleMusic();
     public static final KirModuleMusicPitch MUSIC_PITCH = new KirModuleMusicPitch();
+    public static final KirModuleMusicOption MUSIC_ORDER = KirModuleMusicOption.order();
+    public static final KirModuleMusicOption MUSIC_SOUND_TEST = KirModuleMusicOption.soundTest();
+    public static final KirModuleMusicOption MUSIC_0X10C = KirModuleMusicOption.x10c();
+    public static final KirModuleMusicOption MUSIC_DISCS = KirModuleMusicOption.discs();
+    public static final KirModuleMusicOption MUSIC_NETHER = KirModuleMusicOption.nether();
+    public static final KirModuleMusicOption MUSIC_END = KirModuleMusicOption.end();
     public static final KirModuleRenderCrashGuard RENDER_CRASH_GUARD = new KirModuleRenderCrashGuard();
     public static final KirModuleIntegratedServer INTEGRATED_SERVER = new KirModuleIntegratedServer();
     public static final KirModuleOptifineRenderFix OPTIFINE_RENDER_FIX = new KirModuleOptifineRenderFix();
@@ -158,13 +168,19 @@ public class mod_Kirmod extends BaseMod
         registerModule(DARK_THEME_TINT);
         registerModule(MUSIC_FREQUENCY);
         registerModule(MUSIC_PITCH);
+        registerModule(MUSIC_ORDER);
+        registerModule(MUSIC_SOUND_TEST);
+        registerModule(MUSIC_0X10C);
+        registerModule(MUSIC_DISCS);
+        registerModule(MUSIC_NETHER);
+        registerModule(MUSIC_END);
         registerModule(RENDER_CRASH_GUARD);
         registerModule(INTEGRATED_SERVER);
     }
 
     public String getVersion()
     {
-        return "1.35 for 1.3.2";
+        return "1.36 for 1.3.2";
     }
 
     public String getPriorities()
@@ -296,6 +312,15 @@ public class mod_Kirmod extends BaseMod
         KirCapes.update(mc);
         KirSkins.update(mc);
         KirTexturePacks.update(mc);
+
+        try
+        {
+            KirMusic.update(mc);
+        }
+        catch (Throwable var3)
+        {
+            KirUtil.log("Music player failed", var3);
+        }
     }
 
     /** Opens a screen once chat is closed; for commands, which run while GuiChat is still open. */
@@ -514,6 +539,13 @@ public class mod_Kirmod extends BaseMod
             }
 
             String var3 = var6.getCategory();
+
+            // The Music screen has these (1.36), not the settings screen.
+            if (KirModule.CATEGORY_MUSIC.equals(var3))
+            {
+                continue;
+            }
+
             String var4 = var3 == null ? null : plugin.getParentCategory(var3);
             String var5 = parent != null ? (parent.equals(var4) ? var3 : null) : (var4 != null ? var4 : var3);
 

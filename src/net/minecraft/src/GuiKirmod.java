@@ -14,9 +14,9 @@ import org.lwjgl.opengl.GL12;
  * Options > Kirmod...: the settings screen, laid out like Sodium's video settings. Semi-transparent
  * panels are drawn over the world (over the dirt background at the main menu):
  *
- * - the header: a search box, then "Texture Packs...", "Skin Packs..." and "Capes..." (the texture pack
- *   screen GuiKirmodTexturePacks, the skin picker GuiKirmodSkins and the cape picker GuiKirmodCapes) and
- *   an "x" that closes the screen;
+ * - the header: a search box, then "Texture Packs...", "Skin Packs...", "Capes..." and "Music..." (the
+ *   texture pack screen GuiKirmodTexturePacks, the skin picker GuiKirmodSkins, the cape picker
+ *   GuiKirmodCapes and, since 1.36, the music screen GuiKirmodMusic) and an "x" that closes the screen;
  * - on the left, one section per plugin (KirPlugin: Kirmod's own first, then Kirmod Extras and any
  *   other), headed by its icon and name, with one tab per top-level category of its modules
  *   (KirModule.getCategory(), parents from KirPlugin.getParentCategory()), like Sodium Extra under Sodium;
@@ -49,6 +49,7 @@ public class GuiKirmod extends GuiScreen
     private static final int CLOSE_ID = 4;
     private static final int RESET_ID = 5;
     private static final int DONE_ID = 6;
+    private static final int MUSIC_ID = 7;
 
     /** How long the mouse has to rest on something before its tooltip shows, in milliseconds. */
     private static final long TOOLTIP_DELAY = 500L;
@@ -248,7 +249,7 @@ public class GuiKirmod extends GuiScreen
         }
 
         var4 = Math.min(var4, Math.max(70, this.width / 4));
-        int var10 = HEADER_H + 6 + this.getFlatButtonWidth("Capes...") + this.getFlatButtonWidth("Skin Packs...") + this.getFlatButtonWidth("Texture Packs...") + 2 + MIN_SEARCH_W;
+        int var10 = HEADER_H + 6 + this.getFlatButtonWidth("Music...") + this.getFlatButtonWidth("Capes...") + this.getFlatButtonWidth("Skin Packs...") + this.getFlatButtonWidth("Texture Packs...") + 2 + MIN_SEARCH_W;
         int var11 = this.width - 2 * MARGIN;
 
         // Two columns of options when they fit next to the right column (1.32), else one, as before.
@@ -278,6 +279,7 @@ public class GuiKirmod extends GuiScreen
         // Header: the buttons from the right, the search box takes the rest.
         int var1 = this.right;
         var1 = this.addFlatButton(CLOSE_ID, var1, MARGIN, "x", HEADER_H);
+        var1 = this.addFlatButton(MUSIC_ID, var1 - 2, MARGIN, "Music...", 0);
         var1 = this.addFlatButton(CAPES_ID, var1 - 2, MARGIN, "Capes...", 0);
         var1 = this.addFlatButton(SKINS_ID, var1 - 2, MARGIN, "Skin Packs...", 0);
         var1 = this.addFlatButton(TEXTURE_PACKS_ID, var1 - 2, MARGIN, "Texture Packs...", 0);
@@ -1081,6 +1083,10 @@ public class GuiKirmod extends GuiScreen
 
             case CAPES_ID:
                 this.mc.displayGuiScreen(new GuiKirmodCapes(this));
+                break;
+
+            case MUSIC_ID:
+                this.mc.displayGuiScreen(new GuiKirmodMusic(this));
                 break;
 
             case RESET_ID:
@@ -2272,6 +2278,11 @@ public class GuiKirmod extends GuiScreen
                 case CAPES_ID:
                     var2.add("§eCapes");
                     var2.add("Pick the cape drawn on your player: one your account owns, one from the gallery or your own image. Only you can see it.");
+                    break;
+
+                case MUSIC_ID:
+                    var2.add("\u00a7eMusic");
+                    var2.add("Pick the soundtrack: the game's own, C418's Volume Alpha or Volume Beta, All Music or your own, from .minecraft/soundtracks. Shuffle or in order, Music Frequency, Music Pitch, Nether and End soundtracks, and play, pause and skip.");
                     break;
 
                 case RESET_ID:

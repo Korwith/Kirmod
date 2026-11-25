@@ -42,6 +42,12 @@ public abstract class KirModule
     /** Category of settings for Kirmod's own settings screen; the Interface tab. */
     public static final String CATEGORY_INTERFACE = "Interface";
 
+    /**
+     * Category of the music settings (1.36). The settings screen doesn't list it: its modules are set in the
+     * Music screen (GuiKirmodMusic), opened from the header's "Music..." button.
+     */
+    public static final String CATEGORY_MUSIC = "Music";
+
     /** Category of everything else; shown under Kirmod > Other... */
     public static final String CATEGORY_OTHER = "Other";
 
