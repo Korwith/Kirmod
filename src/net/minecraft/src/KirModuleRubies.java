@@ -13,7 +13,8 @@ import net.minecraft.client.Minecraft;
  * "Ruby Block". With Legacy Storage Blocks on too, the block's Legacy tiles turn red as well.
  *
  * Nothing in the world or the save changes: the item keeps its id, so trading and recipes are untouched.
- * Emerald ore stays as it is, since vanilla has no ruby ore texture.
+ * Since 1.37 emerald ore turns into Ruby Ore too (kirmod/ruby/ruby_ore.png, or ruby_ore_outline.png with
+ * Ore Outlines on), drawn over the emerald ore tile by KirTerrainOverlay.
  *
  * The block uses a KirModuleStorageBlocks.KirBlockStorage (swapped in by Legacy Storage Blocks, or here
  * when that module is disabled), and its tile costs one terrain.png sprite, drawn by a TilesFX. The names
@@ -32,6 +33,8 @@ public class KirModuleRubies extends KirModule
     private static final String BLOCK_KEY = "tile.blockEmerald.name";
     private static final String ITEM_NAME = "Ruby";
     private static final String BLOCK_NAME = "Ruby Block";
+    private static final String ORE_KEY = "tile.oreEmerald.name";
+    private static final String ORE_NAME = "Ruby Ore";
 
     private static final List tiles = new ArrayList();
     private static final KirModuleChests.TilesFX tilesFX = new KirModuleChests.TilesFX(tiles, "Ruby Block");
@@ -43,6 +46,7 @@ public class KirModuleRubies extends KirModule
     private Properties namedTable;
     private String oldItemName;
     private String oldBlockName;
+    private String oldOreName;
     private Field tableField;
 
     public KirModuleRubies()
@@ -58,9 +62,9 @@ public class KirModuleRubies extends KirModule
     public String[] getTooltip()
     {
         return new String[] {
-            "Turns emeralds into rubies: the ruby icon hidden in vanilla's items.png, and a red Ruby Block. Only the look and the names change; trading and recipes work as before.",
+            "Turns emeralds into rubies: the ruby icon hidden in vanilla's items.png, a red Ruby Block and Ruby Ore. Only the look and the names change; trading and recipes work as before.",
             describeValue("Off", "emeralds and blocks of emerald as normal."),
-            describeValue("On", "\"Ruby\" items and \"Ruby Block\" blocks. Emerald ore is unchanged.")
+            describeValue("On", "\"Ruby\" items, \"Ruby Block\" blocks and red Ruby Ore (outlined too with Ore Outlines on).")
         };
     }
 
@@ -172,14 +176,17 @@ public class KirModuleRubies extends KirModule
         {
             this.oldItemName = var2.getProperty(ITEM_KEY);
             this.oldBlockName = var2.getProperty(BLOCK_KEY);
+            this.oldOreName = var2.getProperty(ORE_KEY);
             var2.setProperty(ITEM_KEY, ITEM_NAME);
             var2.setProperty(BLOCK_KEY, BLOCK_NAME);
+            var2.setProperty(ORE_KEY, ORE_NAME);
             this.namedTable = var2;
         }
         else if (!rubies && this.namedTable != null)
         {
             restore(var2, ITEM_KEY, this.oldItemName);
             restore(var2, BLOCK_KEY, this.oldBlockName);
+            restore(var2, ORE_KEY, this.oldOreName);
             this.namedTable = null;
         }
     }

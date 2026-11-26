@@ -29,7 +29,7 @@ public class KirModuleIntegratedServer extends KirModule
 
     public KirModuleIntegratedServer()
     {
-        super("integratedServer", "Integrated Server", "Int. Server", 1, "integratedserver");
+        super("integratedServer", "Integrated Server (Experimental)", "Int. Server (Exp.)", 1, "integratedserver");
     }
 
     public String getCategory()
@@ -43,6 +43,7 @@ public class KirModuleIntegratedServer extends KirModule
             "Whether singleplayer worlds run on Minecraft's integrated server (a second, server copy of the world on its own thread, since 1.3) or on the client itself, as before 1.3.",
             describeValue("On", "vanilla: the integrated server runs the world and the client shows a copy of it."),
             describeValue("Off", "one world, ticked by the client: no server thread, no packets, no second copy. Blocks, mobs and items react without any lag and the game uses less memory."),
+            note("\u00a7eExperimental:\u00a77 turning the integrated server off is still being tested; worlds may behave differently from vanilla. Back up worlds you care about."),
             note("Only changes outside a world. Off: Open to LAN is unavailable; /gamemode, /give, /xp, /tp, /kill and /seed only work on yourself. Mods that run on the server side may not see the player."),
             note("The sidebar shows the integrated server's status: online or offline, how long it has run, and its ticks per second.")
         };

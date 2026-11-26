@@ -2,8 +2,10 @@ package net.minecraft.src;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -36,6 +38,9 @@ import org.lwjgl.opengl.GL12;
  * Since 1.32 the list has two columns of rows when they fit beside the right column (layOutEntries): the
  * groups flow down the left column and on down the right, and screens without room for both get one.
  * The accent colour (Sodium's mint) marks the selected tab, group headers, checkboxes, sliders and focus.
+ *
+ * Since 1.37 a module can have a preview dropdown under its row (KirModule.getPreviewHeight): the row
+ * gets an arrow on its left that opens and closes it (Global Grass and Foliage Color show a tile per biome).
  *
  * Typing in the search box lists the modules of every category whose name matches, grouped by category.
  * Settings are applied straight away and saved (sliders once they are let go). Resting the mouse on a
@@ -121,6 +126,19 @@ public class GuiKirmod extends GuiScreen
 
     private final GuiScreen parentScreen;
 
+    /** Kirmod.cfg entries for where the screen was left (1.37); menu.tab is MENU_HOTKEYS for the Hotkeys list. */
+    private static final String MENU_PLUGIN_KEY = "menu.plugin";
+    private static final String MENU_TAB_KEY = "menu.tab";
+    private static final String MENU_SCROLL_KEY = "menu.scroll";
+    private static final String MENU_SIDE_SCROLL_KEY = "menu.sideScroll";
+    private static final String MENU_HOTKEYS = "*hotkeys";
+
+    /** Keys of the modules whose preview dropdown is open; kept while the game runs (1.37). */
+    private static final Set openPreviews = new HashSet();
+
+    /** The arrow that opens a row's preview dropdown, at the left of the row. */
+    private static final int ARROW_W = 14;
+
     /** The selected tab: a top-level category of a plugin. */
     private KirPlugin selectedPlugin = KirPlugin.KIRMOD;
     private String selectedCategory;
@@ -185,9 +203,60 @@ public class GuiKirmod extends GuiScreen
     private Object hovered;
     private long hoverStart;
 
+    /**
+     * Opens the screen where it was last left (1.37): the same tab, or the Hotkeys list, scrolled as it
+     * was. Kept in Kirmod.cfg (menu.plugin, menu.tab, menu.scroll), so it lasts across restarts too.
+     */
     public GuiKirmod(GuiScreen par1GuiScreen)
     {
         this(par1GuiScreen, (String)null);
+        String var2 = mod_Kirmod.getSetting(MENU_PLUGIN_KEY, (String)null);
+        String var3 = mod_Kirmod.getSetting(MENU_TAB_KEY, (String)null);
+        Iterator var4 = mod_Kirmod.getPlugins().iterator();
+
+        while (var2 != null && var3 != null && var4.hasNext())
+        {
+            KirPlugin var5 = (KirPlugin)var4.next();
+
+            if (var5.getName().equals(var2))
+            {
+                if (MENU_HOTKEYS.equals(var3))
+                {
+                    this.hotkeysSelected = true;
+                }
+                else
+                {
+                    // A tab of an older version that is a group now (Visuals, say): its new tab, scrolled to it.
+                    String var6 = var3;
+
+                    while (var5.getParentCategory(var6) != null)
+                    {
+                        var6 = var5.getParentCategory(var6);
+                    }
+
+                    this.selectedPlugin = var5;
+                    this.selectedCategory = var6;
+
+                    if (!var6.equals(var3))
+                    {
+                        this.scrollToCategory = var3;
+                        break;
+                    }
+                }
+
+                try
+                {
+                    this.scroll = Math.max(0.0F, Float.parseFloat(mod_Kirmod.getSetting(MENU_SCROLL_KEY, "0")));
+                    this.sideScroll = Math.max(0.0F, Float.parseFloat(mod_Kirmod.getSetting(MENU_SIDE_SCROLL_KEY, "0")));
+                }
+                catch (NumberFormatException var7)
+                {
+                    ;
+                }
+
+                break;
+            }
+        }
     }
 
     /** Opens the screen on one of Kirmod's own categories, scrolled to it if it is a subcategory. */
@@ -638,8 +707,8 @@ public class GuiKirmod extends GuiScreen
                     Entry var12 = (Entry)this.entries.get(var10 - 1);
                     Entry var13 = (Entry)this.entries.get(var10);
 
-                    // Never leave a header at the bottom of the left column.
-                    if (var12.label != null && !var12.title)
+                    // Never leave a header at the bottom of the left column, or part a row from its preview.
+                    if (var12.label != null && !var12.title || var13.previewOf != null)
                     {
                         continue;
                     }
@@ -732,7 +801,7 @@ public class GuiKirmod extends GuiScreen
     /** Whether an entry is a row (a module, a hotkey or Reset All Hotkeys), not a header, title or gap. */
     private static boolean isRow(Entry entry)
     {
-        return entry.module != null || entry.hotkey != null || entry.resetKeys;
+        return entry.module != null || entry.hotkey != null || entry.resetKeys || entry.previewOf != null;
     }
 
     private static boolean isGap(Entry entry)
@@ -837,8 +906,42 @@ public class GuiKirmod extends GuiScreen
 
         while (var4.hasNext())
         {
-            this.entries.add(new Entry((KirModule)var4.next(), category, ROW_H));
+            KirModule var5 = (KirModule)var4.next();
+            this.entries.add(new Entry(var5, category, ROW_H));
+
+            if (openPreviews.contains(var5.getKey()) && this.hasPreview(var5))
+            {
+                this.entries.add(Entry.preview(var5, var5.getPreviewHeight(this.getPreviewWidth())));
+            }
         }
+    }
+
+    /** Whether a module's row has a preview dropdown. */
+    private boolean hasPreview(KirModule module)
+    {
+        return module.isAvailable() && module.getPreviewHeight(this.getPreviewWidth()) > 0;
+    }
+
+    /**
+     * The width a preview dropdown is laid out for: a column's, as if the list had a scrollbar (whether it
+     * has one depends on the entries' heights), so it never gets narrower than that.
+     */
+    private int getPreviewWidth()
+    {
+        int var1 = this.listRight - 6 - this.listLeft;
+        return this.listCols == 2 ? (var1 - COL_GAP) / 2 : var1;
+    }
+
+    /** Opens or closes a module's preview dropdown, keeping the list where it is. */
+    private void togglePreview(KirModule module)
+    {
+        if (!openPreviews.remove(module.getKey()))
+        {
+            openPreviews.add(module.getKey());
+        }
+
+        this.rebuildEntries();
+        this.scrollBy(0.0F);
     }
 
     /** Every hotkey, under a label per plugin (and group), then the Reset All Hotkeys row. */
@@ -1247,10 +1350,27 @@ public class GuiKirmod extends GuiScreen
             return;
         }
 
+        if (var14 != null && var14.previewOf != null)
+        {
+            if (var14.previewOf.previewClicked(this.getEntryLeft(var14), this.getEntryY(var14), this.getEntryRight(var14), par1, par2, par3))
+            {
+                this.playClick();
+            }
+
+            return;
+        }
+
         KirModule var7 = this.getModuleAt(par1, par2);
 
         if (var7 == null || par3 != 0 && par3 != 1)
         {
+            return;
+        }
+
+        if (par3 == 0 && par1 < this.getEntryLeft(var14) + ARROW_W && this.hasPreview(var7))
+        {
+            this.playClick();
+            this.togglePreview(var7);
             return;
         }
 
@@ -1386,7 +1506,15 @@ public class GuiKirmod extends GuiScreen
             this.hiddenHud = null;
         }
 
-        // In case the screen closes while a slider is still held.
+        // Where the screen was left, for next time (1.37); setSetting saves, which also covers a slider still held.
+        if (this.hotkeysSelected || this.selectedCategory != null)
+        {
+            mod_Kirmod.setSettingQuietly(MENU_PLUGIN_KEY, (this.hotkeysSelected ? KirPlugin.KIRMOD : this.selectedPlugin).getName());
+            mod_Kirmod.setSettingQuietly(MENU_TAB_KEY, this.hotkeysSelected ? MENU_HOTKEYS : this.selectedCategory);
+            mod_Kirmod.setSettingQuietly(MENU_SCROLL_KEY, this.searchText.length() > 0 ? "0" : String.valueOf((int)this.scroll));
+            mod_Kirmod.setSettingQuietly(MENU_SIDE_SCROLL_KEY, String.valueOf((int)this.sideScroll));
+        }
+
         mod_Kirmod.saveConfig();
     }
 
@@ -1774,6 +1902,12 @@ public class GuiKirmod extends GuiScreen
                 {
                     this.drawRow(var7.module, var10, var5, var3, var7.module == var4);
                 }
+                else if (var7.previewOf != null)
+                {
+                    drawRect(var10, var5, var3, var5 + var7.height, COLOR_HEADER);
+                    var7.previewOf.drawPreview(this.mc, var10, var5, var3, mouseX, mouseY);
+                    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+                }
                 else if (var7.title)
                 {
                     this.drawTitleBar(var7, var10, var5, var3);
@@ -1875,8 +2009,33 @@ public class GuiKirmod extends GuiScreen
             this.fontRenderer.drawString(var15, var7, var5, var6);
         }
 
-        String var16 = this.fontRenderer.trimStringToWidth(module.getTitle(), var7 - left - 14);
-        this.fontRenderer.drawString(var16, left + 6, var5, var6);
+        int var18 = left + 6;
+
+        if (this.hasPreview(module))
+        {
+            // The dropdown's arrow: pointing right while closed, down while open.
+            int var19 = y + ROW_H / 2;
+
+            if (openPreviews.contains(module.getKey()))
+            {
+                for (int var20 = 0; var20 < 3; ++var20)
+                {
+                    drawRect(var18 + var20, var19 - 1 + var20, var18 + 5 - var20, var19 + var20, COLOR_ACCENT);
+                }
+            }
+            else
+            {
+                for (int var21 = 0; var21 < 3; ++var21)
+                {
+                    drawRect(var18 + 1 + var21, var19 - 3 + var21, var18 + 2 + var21, var19 + 2 - var21, COLOR_ACCENT);
+                }
+            }
+
+            var18 = left + ARROW_W;
+        }
+
+        String var16 = this.fontRenderer.trimStringToWidth(module.getTitle(), var7 - var18 - 8);
+        this.fontRenderer.drawString(var16, var18, var5, var6);
     }
 
     /**
@@ -2329,7 +2488,7 @@ public class GuiKirmod extends GuiScreen
     /** What a built-in category is for, or null for one another mod added. */
     private static String getCategoryDescription(String category)
     {
-        return KirModule.CATEGORY_PERFORMANCE.equals(category) ? "Settings that make the game run faster." : (KirModule.CATEGORY_VISUALS.equals(category) ? "Settings that change how the world looks." : (KirModule.CATEGORY_OVERWORLD.equals(category) ? "Settings for how the overworld looks." : (KirModule.CATEGORY_END.equals(category) ? "Settings for how the End looks." : (KirModule.CATEGORY_GAMEPLAY.equals(category) ? "Settings that change how the game plays." : (KirModule.CATEGORY_ITEMS.equals(category) ? "Settings for items, crafting, fishing and villager trading." : (KirModule.CATEGORY_WORLD.equals(category) ? "Settings for world rules: liquids and redstone quirks." : (KirModuleIsometric.CATEGORY_CAMERA.equals(category) ? "The screenshot cameras: isometric and panorama." : (KirModule.CATEGORY_OPTIFINE.equals(category) ? "Fixes and additions for OptiFine's features (most also help without OptiFine)." : (KirModule.CATEGORY_INTERFACE.equals(category) ? "Settings for the menus: how much this screen darkens and blurs the world behind it, and the Dark Theme (and its tint) of the plugins' screens." : (KirModule.CATEGORY_OTHER.equals(category) ? "Everything else." : null))))))))));
+        return KirModule.CATEGORY_GENERAL.equals(category) ? "Performance, how the world looks, block textures, and the OptiFine patches." : KirModule.CATEGORY_TEXTURES.equals(category) ? "Older or outlined block textures, drawn over your texture pack's." : KirModule.CATEGORY_PERFORMANCE.equals(category) ? "Settings that make the game run faster." : (KirModule.CATEGORY_VISUALS.equals(category) ? "Settings that change how the world looks." : (KirModule.CATEGORY_OVERWORLD.equals(category) ? "Settings for how the overworld looks." : (KirModule.CATEGORY_END.equals(category) ? "Settings for how the End looks." : (KirModule.CATEGORY_GAMEPLAY.equals(category) ? "Settings that change how the game plays." : (KirModule.CATEGORY_ITEMS.equals(category) ? "Settings for items, crafting, fishing and villager trading." : (KirModule.CATEGORY_WORLD.equals(category) ? "Settings for world rules: liquids and redstone quirks." : (KirModuleIsometric.CATEGORY_CAMERA.equals(category) ? "The screenshot cameras: isometric and panorama." : (KirModule.CATEGORY_OPTIFINE.equals(category) ? "Fixes and additions for OptiFine's features (most also help without OptiFine)." : (KirModule.CATEGORY_INTERFACE.equals(category) ? "Settings for the menus: how much this screen darkens and blurs the world behind it, and the Dark Theme (and its tint) of the plugins' screens." : (KirModule.CATEGORY_OTHER.equals(category) ? "Everything else." : null))))))))));
     }
 
     /** One line of the sidebar: a plugin's heading (category null) or one of its tabs. */
@@ -2371,6 +2530,9 @@ public class GuiKirmod extends GuiScreen
         KirHotkey hotkey;
         boolean resetKeys;
 
+        /** The module whose preview dropdown this is (under its row), or null. */
+        KirModule previewOf;
+
         /** The bar at the top of a page: label in bold, after titlePlugin's icon (if not null). */
         boolean title;
         KirPlugin titlePlugin;
@@ -2399,6 +2561,13 @@ public class GuiKirmod extends GuiScreen
             Entry var2 = new Entry((KirModule)null, text, ROW_H);
             var2.title = true;
             var2.titlePlugin = plugin;
+            return var2;
+        }
+
+        static Entry preview(KirModule module, int height)
+        {
+            Entry var2 = new Entry((KirModule)null, (String)null, height);
+            var2.previewOf = module;
             return var2;
         }
 

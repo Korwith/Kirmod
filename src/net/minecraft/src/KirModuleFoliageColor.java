@@ -9,7 +9,7 @@ public class KirModuleFoliageColor extends KirModuleBiomeColor
 {
     public KirModuleFoliageColor()
     {
-        super(KirUtil.findField(ColorizerFoliage.class, "foliageBuffer", "a"), "foliageColor", "Global Foliage Color", "Foliage", "foliagecolor", "foliage", "leaves");
+        super(KirUtil.findField(ColorizerFoliage.class, "foliageBuffer", "a"), "foliageColors", "foliageColor", "Global Foliage Color", "Foliage", "foliagecolor", "foliage", "leaves");
     }
 
     public String getCategory()
@@ -22,7 +22,8 @@ public class KirModuleFoliageColor extends KirModuleBiomeColor
         return new String[] {
             "Makes leaves and vines the same color everywhere: the color they have in one biome. Birch and spruce leaves have fixed colors and don't change.",
             describeValue("Default", "each biome has its own foliage color, as in your texture pack."),
-            describeValue("A biome name", "all leaves have that biome's color. Click through the biomes to pick one.")
+            describeValue("A biome name", "all leaves have that biome's color. Click through the biomes to pick one."),
+            note("Click the arrow at the left of the row for a tile of each biome's color; click a tile to pick it.")
         };
     }
 
@@ -34,5 +35,11 @@ public class KirModuleFoliageColor extends KirModuleBiomeColor
     protected void setColorBuffer(int[] buffer)
     {
         ColorizerFoliage.getFoilageBiomeColorizer(buffer);
+    }
+
+    /** The fancy oak leaves. */
+    protected int getPreviewTexture()
+    {
+        return 52;
     }
 }

@@ -2,13 +2,13 @@ package net.minecraft.src;
 
 /**
  * Dark Theme Tint (Interface, 1.30): how strong the Dark Theme's black coat is, from 10% to 90%
- * (default 60%, alpha 153 of 255). KirTheme reads it every time it draws, so a change shows straight away.
+ * (default 80% since 1.37, alpha 204 of 255). KirTheme reads it every time it draws, so a change shows straight away.
  */
 public class KirModuleDarkThemeTint extends KirModule
 {
     private static final String[] VALUES = new String[9];
-    /** Index of the default, 60%. */
-    public static final int DEFAULT = 5;
+    /** Index of the default, 80% (60% before 1.37). */
+    public static final int DEFAULT = 7;
 
     static
     {
@@ -43,7 +43,7 @@ public class KirModuleDarkThemeTint extends KirModule
         return new String[] {
             "How dark the Dark Theme makes the plugins' screens: the strength of its black coat. Only matters while Dark Theme is On. Changes show straight away.",
             describeValue("10% to 90%", "a black coat of that strength over panels, slots, buttons and tabs; items are never darkened."),
-            note("Default 60%.")
+            note("Default 80%.")
         };
     }
 

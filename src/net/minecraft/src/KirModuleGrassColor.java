@@ -8,7 +8,7 @@ public class KirModuleGrassColor extends KirModuleBiomeColor
 {
     public KirModuleGrassColor()
     {
-        super(KirUtil.findField(ColorizerGrass.class, "grassBuffer", "a"), "grassColor", "Global Grass Color", "Grass", "grasscolor", "grass");
+        super(KirUtil.findField(ColorizerGrass.class, "grassBuffer", "a"), "grassColors", "grassColor", "Global Grass Color", "Grass", "grasscolor", "grass");
     }
 
     public String getCategory()
@@ -21,7 +21,8 @@ public class KirModuleGrassColor extends KirModuleBiomeColor
         return new String[] {
             "Makes grass, tall grass and ferns the same color everywhere: the color they have in one biome.",
             describeValue("Default", "each biome has its own grass color, as in your texture pack."),
-            describeValue("A biome name", "all grass has that biome's color. Click through the biomes to pick one.")
+            describeValue("A biome name", "all grass has that biome's color. Click through the biomes to pick one."),
+            note("Click the arrow at the left of the row for a tile of each biome's color; click a tile to pick it.")
         };
     }
 
@@ -33,5 +34,11 @@ public class KirModuleGrassColor extends KirModuleBiomeColor
     protected void setColorBuffer(int[] buffer)
     {
         ColorizerGrass.setGrassBiomeColorizer(buffer);
+    }
+
+    /** The grass block top. */
+    protected int getPreviewTexture()
+    {
+        return 0;
     }
 }

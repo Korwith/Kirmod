@@ -15,16 +15,22 @@ import net.minecraft.client.Minecraft;
  */
 public abstract class KirModule
 {
-    /** Category of modules that make the game run faster; shown under Kirmod > Performance... */
+    /**
+     * The General tab (1.37): no modules of its own, it holds the Performance, Visuals, Textures and OptiFine
+     * Patches groups (the first two and the last used to be tabs of their own).
+     */
+    public static final String CATEGORY_GENERAL = "General";
+
+    /** Category of modules that make the game run faster; shown under Kirmod > General > Performance. */
     public static final String CATEGORY_PERFORMANCE = "Performance";
 
-    /** Category of modules that change how the world looks; shown under Kirmod > Visuals... */
+    /** Category of modules that change how the world looks; shown under Kirmod > General > Visuals. */
     public static final String CATEGORY_VISUALS = "Visuals";
 
-    /** Category of modules about how the overworld looks; shown under Kirmod > Visuals... > Overworld... */
+    /** Category of modules about how the overworld looks; shown under Kirmod > General > Visuals > Overworld. */
     public static final String CATEGORY_OVERWORLD = "Overworld";
 
-    /** Category of modules about how the End looks; shown under Kirmod > Visuals... > End Dimension... */
+    /** Category of modules about how the End looks; shown under Kirmod > General > Visuals > End Dimension. */
     public static final String CATEGORY_END = "End Dimension";
 
     /** Category of modules that change how the game plays; shown under Kirmod > Gameplay... */
@@ -36,7 +42,13 @@ public abstract class KirModule
     /** Category of world rules (liquids, redstone quirks); shown under Kirmod > Gameplay... > World... */
     public static final String CATEGORY_WORLD = "World";
 
-    /** Category of fixes and additions for OptiFine's features; shown under Kirmod > OptiFine Patches... */
+    /**
+     * Category of block texture choices (Ore Outlines, Beta grass, Alpha bricks...; KirModuleTexture), shown
+     * under Kirmod > General > Textures (1.37).
+     */
+    public static final String CATEGORY_TEXTURES = "Textures";
+
+    /** Category of fixes and additions for OptiFine's features; shown under Kirmod > General > OptiFine Patches. */
     public static final String CATEGORY_OPTIFINE = "OptiFine Patches";
 
     /** Category of settings for Kirmod's own settings screen; the Interface tab. */
@@ -178,12 +190,20 @@ public abstract class KirModule
         return null;
     }
 
-    /** The category whose screen has the button of this category, or null for the main screen. */
+    /**
+     * The category whose screen has the button of this category, or null for the main screen. Categories
+     * can nest more than one deep: General > Visuals > Overworld (1.37).
+     */
     public static String getParentCategory(String category)
     {
         if (CATEGORY_OVERWORLD.equals(category) || CATEGORY_END.equals(category))
         {
             return CATEGORY_VISUALS;
+        }
+
+        if (CATEGORY_PERFORMANCE.equals(category) || CATEGORY_VISUALS.equals(category) || CATEGORY_TEXTURES.equals(category) || CATEGORY_OPTIFINE.equals(category))
+        {
+            return CATEGORY_GENERAL;
         }
 
         return CATEGORY_ITEMS.equals(category) || CATEGORY_WORLD.equals(category) ? CATEGORY_GAMEPLAY : null;
@@ -209,6 +229,25 @@ public abstract class KirModule
     protected static String note(String text)
     {
         return "\u00a77" + text;
+    }
+
+    /**
+     * Height of the preview dropdown under this module's row in the settings screen, for a row the given
+     * width; 0 (the default) for none. A row with a preview gets an arrow that opens and closes it. New in
+     * Kirmod 1.37 (Global Grass and Foliage Color).
+     */
+    public int getPreviewHeight(int width)
+    {
+        return 0;
+    }
+
+    /** Draws the preview dropdown (see getPreviewHeight) between left and right, from y down. */
+    public void drawPreview(Minecraft mc, int left, int y, int right, int mouseX, int mouseY) {}
+
+    /** A click in the preview dropdown; returns whether it did something (the screen then plays the click). */
+    public boolean previewClicked(int left, int y, int right, int mouseX, int mouseY, int button)
+    {
+        return false;
     }
 
     /** False if the module could not hook into the game (another mod got there first, say). */

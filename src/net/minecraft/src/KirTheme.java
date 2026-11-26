@@ -6,7 +6,7 @@ import org.lwjgl.opengl.GL11;
  * Kirmod's global Dark Theme (1.30), for plugin screens drawn in vanilla's container style.
  *
  * The theme is a black coat over a screen's surfaces, its alpha set by Interface > Dark Theme Tint
- * (10% to 90%, default 60% = 153 of 255): panels, slots,
+ * (10% to 90%, default 80% = 204 of 255): panels, slots,
  * wells, buttons, tabs. A plugin draws its surfaces through this class and draws its items and text
  * afterwards, so those are never darkened. Plugins never keep a dark palette of their own; the switch
  * is Kirmod > Interface > Dark Theme.
@@ -17,12 +17,12 @@ import org.lwjgl.opengl.GL11;
  *   font.drawString(KirTheme.text(s), x, y, KirTheme.text(0xFF404040));
  *
  * surface() and textureColor() give exactly what the coat would over an opaque pixel (each channel
- * times keep(), 102/255 at the default), so they suit shapes with cut corners or transparent texture pixels, where a coat
+ * times keep(), 51/255 at the default), so they suit shapes with cut corners or transparent texture pixels, where a coat
  * rectangle would also darken what is behind them.
  */
 public class KirTheme
 {
-    /** The coat's opacity, 0-255: Interface > Dark Theme Tint (default 60%, alpha 153). */
+    /** The coat's opacity, 0-255: Interface > Dark Theme Tint (default 80%, alpha 204). */
     public static int coatAlpha()
     {
         return mod_Kirmod.DARK_THEME_TINT.getAlpha();
@@ -34,7 +34,7 @@ public class KirTheme
         return coatAlpha() << 24;
     }
 
-    /** What an opaque channel keeps under the coat (0.4 at the default 60%). */
+    /** What an opaque channel keeps under the coat (0.2 at the default 80%). */
     public static float keep()
     {
         return (255 - coatAlpha()) / 255.0F;

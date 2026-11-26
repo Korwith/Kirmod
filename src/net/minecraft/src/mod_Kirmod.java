@@ -94,6 +94,15 @@ public class mod_Kirmod extends BaseMod
     public static final KirModuleStorageBlocks STORAGE_BLOCKS = new KirModuleStorageBlocks();
     public static final KirModuleRubies RUBIES = new KirModuleRubies();
     public static final KirModuleStickyPistons STICKY_PISTONS = new KirModuleStickyPistons();
+    public static final KirModuleTexture ORE_OUTLINES = KirModuleTexture.oreOutlines();
+    public static final KirModuleTexture GRASS_TEXTURE = KirModuleTexture.grass();
+    public static final KirModuleTexture COBBLESTONE_TEXTURE = KirModuleTexture.cobblestone();
+    public static final KirModuleTexture BRICKS_TEXTURE = KirModuleTexture.bricks();
+    public static final KirModuleTexture MOB_SPAWNER_TEXTURE = KirModuleTexture.mobSpawner();
+    public static final KirModuleTexture WOOL_TEXTURE = KirModuleTexture.wool();
+    public static final KirModuleTexture END_STONE_TEXTURE = KirModuleTexture.endStone();
+    public static final KirModuleTexture GRAVEL_TEXTURE = KirModuleTexture.gravel();
+    public static final KirModuleTexture GLOWSTONE_TEXTURE = KirModuleTexture.glowstone();
     public static final KirModuleGrassColor GRASS_COLOR = new KirModuleGrassColor();
     public static final KirModuleFoliageColor FOLIAGE_COLOR = new KirModuleFoliageColor();
     public static final KirModuleBlockOutline BLOCK_OUTLINE = new KirModuleBlockOutline();
@@ -149,6 +158,15 @@ public class mod_Kirmod extends BaseMod
         registerModule(STORAGE_BLOCKS);
         registerModule(RUBIES);
         registerModule(STICKY_PISTONS);
+        registerModule(ORE_OUTLINES);
+        registerModule(GRASS_TEXTURE);
+        registerModule(COBBLESTONE_TEXTURE);
+        registerModule(BRICKS_TEXTURE);
+        registerModule(MOB_SPAWNER_TEXTURE);
+        registerModule(WOOL_TEXTURE);
+        registerModule(END_STONE_TEXTURE);
+        registerModule(GRAVEL_TEXTURE);
+        registerModule(GLOWSTONE_TEXTURE);
         registerModule(GRASS_COLOR);
         registerModule(FOLIAGE_COLOR);
         registerModule(BLOCK_OUTLINE);
@@ -257,6 +275,12 @@ public class mod_Kirmod extends BaseMod
         if (STICKY_PISTONS.isEnabled() && KirModuleStickyPistons.hasTiles())
         {
             ModLoader.addAnimation(KirModuleStickyPistons.getTilesFX(mc));
+        }
+
+        // The Textures group and Ruby Ore, drawn over vanilla's own tiles (1.37).
+        if (KirModuleTexture.anyEnabled())
+        {
+            ModLoader.addAnimation(KirTerrainOverlay.get(mc));
         }
     }
 
@@ -559,8 +583,23 @@ public class mod_Kirmod extends BaseMod
                 continue;
             }
 
-            String var4 = var3 == null ? null : plugin.getParentCategory(var3);
-            String var5 = parent != null ? (parent.equals(var4) ? var3 : null) : (var4 != null ? var4 : var3);
+            // Walks up from the module's category: the top one for the sidebar, else the one right under parent.
+            String var5 = null;
+            String var4 = var3;
+            int var7 = 0;
+
+            while (var4 != null && var7++ < 16)
+            {
+                String var8 = plugin.getParentCategory(var4);
+
+                if (parent == null ? var8 == null : parent.equals(var8))
+                {
+                    var5 = var4;
+                    break;
+                }
+
+                var4 = var8;
+            }
 
             if (var5 != null && !var1.contains(var5))
             {
@@ -866,6 +905,12 @@ public class mod_Kirmod extends BaseMod
     public static String getSetting(String key, String defaultValue)
     {
         return config.getProperty(key, defaultValue);
+    }
+
+    /** Sets a Kirmod.cfg entry that isn't a module value, without saving yet (the next saveConfig() writes it). */
+    public static void setSettingQuietly(String key, String value)
+    {
+        config.setProperty(key, value);
     }
 
     /** Sets and saves a Kirmod.cfg entry that isn't a module value. */

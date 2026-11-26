@@ -384,7 +384,7 @@ public class KirModuleChests extends KirModule
         }
 
         /** An image scaled to size x size as RGBA bytes, grey for 3D anaglyph like ModTextureStatic. */
-        private static ByteBuffer toBuffer(BufferedImage image, int size, boolean anaglyph)
+        static ByteBuffer toBuffer(BufferedImage image, int size, boolean anaglyph)
         {
             BufferedImage var3 = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
             Graphics2D var4 = var3.createGraphics();
