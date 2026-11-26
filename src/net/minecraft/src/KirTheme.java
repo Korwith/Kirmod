@@ -60,7 +60,10 @@ public class KirTheme
         return argb & 0xFF000000 | r << 16 | g << 8 | b;
     }
 
-    /** glColor for a textured surface (a gui.png button, a creative tab), times an optional tint. */
+    /**
+     * glColor for a textured surface (a gui.png button, a creative tab), times an optional tint. Bind the
+     * texture first: with gui.png bound, the darkening KirDarkMenus already gave its button rows is allowed for.
+     */
     public static void textureColor()
     {
         textureColor(1.0F, 1.0F, 1.0F);
@@ -68,7 +71,8 @@ public class KirTheme
 
     public static void textureColor(float r, float g, float b)
     {
-        float k = isDark() ? keep() : 1.0F;
+        // gui.png's button rows may be darkened already (KirDarkMenus): only make up the rest.
+        float k = isDark() ? Math.min(1.0F, keep() / KirDarkMenus.boundTextureKeep()) : 1.0F;
         GL11.glColor4f(r * k, g * k, b * k, 1.0F);
     }
 

@@ -6,169 +6,240 @@ import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
 /**
- * Dark Theme for vanilla's settings screens (1.37): Options, Video Settings, Controls, Language, Snooper
- * Settings, Texture Packs and OptiFine's settings screens get the look of Kirpack Dark.
+ * Dark Theme for vanilla's own screens (1.37): the main menu (buttons and logo), the pause menu, Options,
+ * Video Settings, Controls, the world and server lists and every other vanilla screen get the look of
+ * Kirpack Dark.
  *
- * Those screens are vanilla classes, so nothing is drawn differently: while one is open (and Dark Theme is
- * on), the textures they draw with are changed instead. In gui.png the normal button rows (v 66 to 85)
- * are darkened by a share of the Dark Theme Tint (5/8 of it, so the default 80% gives Kirpack Dark's half
- * brightness), leaving hovered and disabled buttons as they are; background.png (the menu background
- * outside a world) becomes Kirpack Dark's grey stone (kirmod/dark/background.png). Both are put back as
- * the pack has them as soon as no such screen is open, so the main menu, the HUD and every other screen
- * stay as they were. The rows are written again every frame while needed, which also covers the pack's
- * textures being uploaded again after a texture pack change.
+ * Those screens are vanilla classes, so nothing is drawn differently: while Dark Theme is on, the textures
+ * they draw with are changed instead. In gui.png the normal button rows (v 66 to 85) and the language
+ * button (v 106 to 125) are darkened by a share of the Dark Theme Tint (5/8 of it, so the default 80% gives
+ * Kirpack Dark's half brightness), leaving hovered and disabled buttons as they are; the logo
+ * (title/mclogo.png) is darkened the same way; background.png (the dirt behind menus) becomes Kirpack
+ * Dark's grey stone (kirmod/dark/background.png). The HUD never draws from those parts of gui.png.
+ *
+ * The textures stay changed for as long as the theme is on, whichever screen is open. (Before, they were
+ * changed only while a settings screen was open; ModLoader runs its hooks after the frame is drawn, so a
+ * screen's first frame was always drawn with the previous screen's textures.) They are written again when
+ * the theme, the tint or the pack changes, right after Kirmod reloads the textures (reapply), every frame
+ * while a screen is open and 20 times a second from KirTexturePacks' tick, which also runs at the main
+ * menu: that covers textures reloaded behind Kirmod's back (F3+T, OptiFine's video settings).
  */
 public class KirDarkMenus
 {
     private static final String GUI = "/gui/gui.png";
-    private static final String BACKGROUND = "/gui/background.png";
-    private static final String DARK_BACKGROUND = KirModuleChests.TEXTURE_DIR + "dark/background.png";
 
-    /** The normal button rows of gui.png (at 256 wide). */
-    private static final int BUTTON_Y = 66;
-    private static final int BUTTON_H = 20;
-    private static final int BUTTON_W = 200;
+    /** gui.png's normal button rows and language button, the menu background and the logo. */
+    private static final Patch BUTTONS = new Patch(GUI, 0, 66, 200, 20, null);
+    private static final Patch LANGUAGE = new Patch(GUI, 0, 106, 20, 20, null);
+    private static final Patch BACKGROUND = new Patch("/gui/background.png", 0, 0, 0, 0, KirModuleChests.TEXTURE_DIR + "dark/background.png");
+    private static final Patch LOGO = new Patch("/title/mclogo.png", 0, 0, 0, 0, null);
+    private static final Patch[] PATCHES = new Patch[] {BUTTONS, LANGUAGE, BACKGROUND, LOGO};
 
-    /** The texture pack the images were read from; its gui.png and background.png. */
+    /** The texture pack the images were read from. */
     private static Object pack;
-    private static BufferedImage packGui;
-    private static BufferedImage packBackground;
-    private static BufferedImage darkBackground;
 
-    /** Whether the textures are darkened now, and the tint they were darkened with. */
-    private static boolean applied;
+    /** What the textures hold now: "dark/<tint alpha>", or null for the pack's own pixels. */
+    private static String applied;
+
+    /** gui.png's GL texture while it is darkened, else -1; and how much its button rows keep. */
+    private static int darkGuiTexture = -1;
+    private static float darkGuiKeep = 1.0F;
+
     private static boolean failed;
 
-    /** Called every frame (from KirModuleDarkTheme.update). */
+    /** Every frame in a world (KirModuleDarkTheme.update): rewritten while a screen is open. */
     static void update(Minecraft mc)
     {
-        if (failed || mc.renderEngine == null)
+        apply(mc, mc.currentScreen != null, mc.currentScreen instanceof GuiMainMenu);
+    }
+
+    /** 20 times a second, also at the main menu (KirTexturePacks' tick hook). */
+    static void tick(Minecraft mc)
+    {
+        if (mod_Kirmod.DARK_THEME.enabled)
         {
-            return;
+            apply(mc, true, mc.currentScreen instanceof GuiMainMenu);
         }
+    }
 
-        boolean var1 = KirTheme.isDark() && isSettingsScreen(mc.currentScreen);
+    /** Right after the textures were reloaded (RenderEngine.refreshTextures), before anything is drawn. */
+    static void reapply(Minecraft mc)
+    {
+        applied = null;
 
-        if (!var1 && !applied)
+        if (mod_Kirmod.DARK_THEME.enabled)
+        {
+            apply(mc, true, true);
+        }
+    }
+
+    /**
+     * Puts the textures in the state the theme wants. refresh writes them even if they should be in it
+     * already (the pack may have uploaded its own again); the logo is only refreshed with refreshLogo, as
+     * it is only seen at the main menu and is the largest.
+     */
+    private static void apply(Minecraft mc, boolean refresh, boolean refreshLogo)
+    {
+        if (failed || mc.renderEngine == null || mc.texturePackList == null)
         {
             return;
         }
 
         try
         {
-            Object var2 = mc.texturePackList.getSelectedTexturePack();
+            Object var4 = mc.texturePackList.getSelectedTexturePack();
 
-            if (var2 != pack)
+            if (var4 != pack)
             {
                 // A new pack has uploaded its own textures, undarkened.
-                pack = var2;
-                packGui = null;
-                packBackground = null;
-                applied = false;
+                pack = var4;
+                applied = null;
 
-                if (!var1)
+                for (int var5 = 0; var5 < PATCHES.length; ++var5)
                 {
-                    return;
+                    PATCHES[var5].forget();
                 }
             }
 
-            int var3 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+            boolean var6 = KirTheme.isDark();
+            String var7 = var6 ? "dark/" + KirTheme.coatAlpha() : null;
+            boolean var8 = var7 == null ? applied != null : !var7.equals(applied);
+
+            if (!var8 && (!refresh || !var6))
+            {
+                return;
+            }
+
+            float var9 = var6 ? 1.0F - 0.625F * KirTheme.coatAlpha() / 255.0F : 1.0F;
+            int var10 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
 
             try
             {
-                if (var1)
+                BUTTONS.write(mc.renderEngine, var6, var9);
+                LANGUAGE.write(mc.renderEngine, var6, var9);
+                BACKGROUND.write(mc.renderEngine, var6, var9);
+
+                if (var8 || refreshLogo)
                 {
-                    // Every frame: cheap, and the pack's textures may have been uploaded again meanwhile.
-                    write(mc, true);
-                    applied = true;
-                }
-                else
-                {
-                    write(mc, false);
-                    applied = false;
+                    LOGO.write(mc.renderEngine, var6, var9);
                 }
             }
             finally
             {
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, var3);
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, var10);
             }
+
+            applied = var7;
+            darkGuiTexture = var6 ? mc.renderEngine.getTexture(GUI) : -1;
+            darkGuiKeep = var9;
         }
-        catch (Throwable var5)
+        catch (Throwable var12)
         {
             failed = true;
-            KirUtil.log("Could not apply the Dark Theme to the options screens", var5);
+            darkGuiTexture = -1;
+            KirUtil.log("Could not apply the Dark Theme to the menus", var12);
         }
     }
 
-    /** Vanilla's settings screens and OptiFine's (GuiQualitySettingsOF, GuiDetailSettingsOF...). */
-    static boolean isSettingsScreen(GuiScreen screen)
+    /**
+     * How much of its brightness the bound texture's button rows already keep: below 1 while gui.png is
+     * bound and darkened. KirTheme.textureColor divides by it, so plugin buttons aren't darkened twice.
+     */
+    static float boundTextureKeep()
     {
-        if (screen == null)
+        if (darkGuiTexture < 0 || GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D) != darkGuiTexture)
         {
-            return false;
+            return 1.0F;
         }
 
-        if (screen instanceof GuiOptions || screen instanceof GuiVideoSettings || screen instanceof GuiControls || screen instanceof GuiLanguage || screen instanceof GuiSnooper || screen instanceof GuiTexturePacks)
-        {
-            return true;
-        }
-
-        String var1 = screen.getClass().getName();
-        var1 = var1.substring(var1.lastIndexOf('.') + 1);
-        return var1.startsWith("Gui") && var1.endsWith("OF");
+        return darkGuiKeep;
     }
 
-    /** The last buffers written, and what they were made for, so nothing is made again every frame. */
-    private static ByteBuffer guiBuffer;
-    private static ByteBuffer backgroundBuffer;
-    private static String bufferKey;
-
-    private static void write(Minecraft mc, boolean dark) throws Exception
+    /** One part of a texture: darkened (or replaced by darkImage) with the theme on, the pack's own with it off. */
+    private static class Patch
     {
-        RenderEngine var2 = mc.renderEngine;
+        private final String texture;
 
-        if (packGui == null)
+        /** The part, in 256ths of the texture's width (gui.png's layout); w 0 is the whole texture. */
+        private final int u;
+        private final int v;
+        private final int w;
+        private final int h;
+
+        /** Shown instead of the pack's pixels when dark, or null to darken the pack's. */
+        private final String darkImage;
+
+        private BufferedImage packImage;
+        private BufferedImage darkSource;
+
+        /** The last pixels written, and what they were made for, so nothing is made again every frame. */
+        private ByteBuffer buffer;
+        private String bufferKey;
+
+        Patch(String texture, int u, int v, int w, int h, String darkImage)
         {
-            packGui = ModLoader.loadImage(var2, GUI);
-            packBackground = ModLoader.loadImage(var2, BACKGROUND);
-            bufferKey = null;
+            this.texture = texture;
+            this.u = u;
+            this.v = v;
+            this.w = w;
+            this.h = h;
+            this.darkImage = darkImage;
         }
 
-        if (darkBackground == null)
+        void forget()
         {
-            darkBackground = ModLoader.loadImage(var2, DARK_BACKGROUND);
+            this.packImage = null;
+            this.bufferKey = null;
         }
 
-        int var3 = var2.getTexture(GUI);
-        int var4 = var2.getTexture(BACKGROUND);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, var3);
-        int var5 = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, var4);
-        int var6 = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
-        int var7 = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
-        float var8 = var5 / 256.0F;
-        int var9 = Math.round(BUTTON_W * var8);
-        int var10 = Math.round(BUTTON_H * var8);
-        String var11 = dark + "/" + KirTheme.coatAlpha() + "/" + var5 + "/" + var6 + "x" + var7;
-
-        if (!var11.equals(bufferKey))
+        void write(RenderEngine engine, boolean dark, float keep) throws Exception
         {
-            // gui.png: the normal button rows, darkened or as the pack has them.
-            float var12 = packGui.getWidth() / 256.0F;
-            BufferedImage var13 = scaled(packGui.getSubimage(0, Math.round(BUTTON_Y * var12), Math.round(BUTTON_W * var12), Math.round(BUTTON_H * var12)), var9, var10);
-            guiBuffer = toBuffer(var13, dark ? 1.0F - 0.625F * KirTheme.coatAlpha() / 255.0F : 1.0F);
+            if (this.packImage == null)
+            {
+                this.packImage = ModLoader.loadImage(engine, this.texture);
+                this.bufferKey = null;
+            }
 
-            // background.png: Kirpack Dark's stone, or the pack's own.
-            backgroundBuffer = toBuffer(scaled(dark ? darkBackground : packBackground, var6, var7), 1.0F);
-            bufferKey = var11;
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, engine.getTexture(this.texture));
+            int var4 = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
+            int var5 = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
+            float var6 = var4 / 256.0F;
+            int var7 = this.w == 0 ? var4 : Math.round(this.w * var6);
+            int var8 = this.w == 0 ? var5 : Math.round(this.h * var6);
+            String var9 = dark + "/" + keep + "/" + var4 + "x" + var5;
+
+            if (!var9.equals(this.bufferKey))
+            {
+                BufferedImage var10;
+                float var11 = 1.0F;
+
+                if (dark && this.darkImage != null)
+                {
+                    if (this.darkSource == null)
+                    {
+                        this.darkSource = ModLoader.loadImage(engine, this.darkImage);
+                    }
+
+                    var10 = this.darkSource;
+                }
+                else
+                {
+                    float var12 = this.packImage.getWidth() / 256.0F;
+                    var10 = this.w == 0 ? this.packImage : this.packImage.getSubimage(Math.round(this.u * var12), Math.round(this.v * var12), Math.round(this.w * var12), Math.round(this.h * var12));
+
+                    if (dark)
+                    {
+                        var11 = keep;
+                    }
+                }
+
+                this.buffer = toBuffer(scaled(var10, var7, var8), var11);
+                this.bufferKey = var9;
+            }
+
+            this.buffer.rewind();
+            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, Math.round(this.u * var6), Math.round(this.v * var6), var7, var8, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, this.buffer);
         }
-
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, var3);
-        guiBuffer.rewind();
-        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, Math.round(BUTTON_Y * var8), var9, var10, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, guiBuffer);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, var4);
-        backgroundBuffer.rewind();
-        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, var6, var7, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, backgroundBuffer);
     }
 
     private static BufferedImage scaled(BufferedImage image, int width, int height)

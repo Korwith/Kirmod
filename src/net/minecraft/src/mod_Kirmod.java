@@ -257,6 +257,9 @@ public class mod_Kirmod extends BaseMod
     {
         ModLoader.addAnimation(KirTexturePacks.getTickFX(mc));
 
+        // The earliest point the menus can be darkened at startup, and again after a pack change (1.37).
+        KirDarkMenus.reapply(mc);
+
         if (CHEST_MODELS.isEnabled() && KirModuleChests.chestTop >= 0)
         {
             ModLoader.addAnimation(KirModuleChests.getTilesFX(mc));

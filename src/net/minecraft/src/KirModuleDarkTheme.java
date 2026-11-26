@@ -7,7 +7,8 @@ import net.minecraft.client.Minecraft;
  * container style (Ghost Shapes, Ghost Terrain, Storage Spaces, the recipe book...). When On, KirTheme
  * lays a black coat (Dark Theme Tint sets its strength, 80% by default) over their panels, slots, buttons and tabs. Items and
  * text are drawn after the coat, so they keep their colors; dark label text is lightened so it still
- * reads on the darker panels. Since 1.37 it also darkens vanilla's settings screens (KirDarkMenus).
+ * reads on the darker panels. Since 1.37 it also darkens vanilla's own menus: the main menu and its logo,
+ * the pause menu, the settings screens and the rest (KirDarkMenus).
  */
 public class KirModuleDarkTheme extends KirModule
 {
@@ -31,14 +32,14 @@ public class KirModuleDarkTheme extends KirModule
     public String[] getTooltip()
     {
         return new String[] {
-            "Darkens the vanilla-style screens of Kirmod's plugins (Ghost Shapes, Ghost Terrain, Storage Spaces, the recipe book) and Minecraft's own settings screens (Options, Video Settings, Controls...) so they all share one dark look, like Kirpack Dark. Changes show straight away.",
+            "Darkens the vanilla-style screens of Kirmod's plugins (Ghost Shapes, Ghost Terrain, Storage Spaces, the recipe book) and Minecraft's own menus (the main menu and its logo, the pause menu, Options, Video Settings, Controls...) so they all share one dark look, like Kirpack Dark. Changes show straight away.",
             describeValue("Off", "vanilla's light grey panels."),
             describeValue("On", "a black coat (Dark Theme Tint sets how strong, 80% by default) over panels, slots, buttons and tabs. Items are not darkened, and dark text is lightened to stay readable."),
             note("Replaces the Storage Spaces plugin's own Light/Dark theme.")
         };
     }
 
-    /** Darkens vanilla's settings screens while one is open (1.37); see KirDarkMenus. */
+    /** Darkens vanilla's menus (1.37); see KirDarkMenus. */
     public void update(Minecraft mc)
     {
         KirDarkMenus.update(mc);

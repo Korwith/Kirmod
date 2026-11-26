@@ -326,6 +326,7 @@ public class KirTexturePacks
             lastPack = pack;
             syncHD(mc, pack);
             mc.renderEngine.refreshTextures();
+            KirDarkMenus.reapply(mc);
 
             if (mc.theWorld != null)
             {
@@ -498,6 +499,7 @@ public class KirTexturePacks
         {
             // A 16x animation was added (and may already have been written at the wrong place).
             mc.renderEngine.refreshTextures();
+            KirDarkMenus.reapply(mc);
         }
 
         if (var1 || var2 != lastPack)
@@ -509,6 +511,7 @@ public class KirTexturePacks
                 // The textures on the card are the default pack's (lost built-in pack), or vanilla
                 // animations have already been written at the wrong tile size.
                 mc.renderEngine.refreshTextures();
+                KirDarkMenus.reapply(mc);
             }
         }
     }
@@ -557,6 +560,9 @@ public class KirTexturePacks
             {
                 KirTexturePacks.update(ModLoader.getMinecraftInstance());
                 KirLocalGame.install(ModLoader.getMinecraftInstance());
+
+                // Keeps the menus dark, also at the main menu where mod_Kirmod's hooks don't run (1.37).
+                KirDarkMenus.tick(ModLoader.getMinecraftInstance());
 
                 // In a world mod_Kirmod's tick runs the music player; at the main menu only this does (1.36).
                 if (ModLoader.getMinecraftInstance().theWorld == null)
