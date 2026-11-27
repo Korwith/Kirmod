@@ -60,6 +60,9 @@ public abstract class KirModule
      */
     public static final String CATEGORY_MUSIC = "Music";
 
+    /** Category of the world backup settings (1.38); the Backups tab, with its panel (KirModuleBackups). */
+    public static final String CATEGORY_BACKUPS = "Backups";
+
     /** Category of everything else; shown under Kirmod > Other... */
     public static final String CATEGORY_OTHER = "Other";
 
@@ -239,6 +242,15 @@ public abstract class KirModule
     public int getPreviewHeight(int width)
     {
         return 0;
+    }
+
+    /**
+     * True to show the preview dropdown always, without the arrow that opens and closes it: for a panel that
+     * belongs with the row, like Auto Backup's (1.38).
+     */
+    public boolean isPreviewAlwaysOpen()
+    {
+        return false;
     }
 
     /** Draws the preview dropdown (see getPreviewHeight) between left and right, from y down. */

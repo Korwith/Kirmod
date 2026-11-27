@@ -909,7 +909,7 @@ public class GuiKirmod extends GuiScreen
             KirModule var5 = (KirModule)var4.next();
             this.entries.add(new Entry(var5, category, ROW_H));
 
-            if (openPreviews.contains(var5.getKey()) && this.hasPreview(var5))
+            if ((var5.isPreviewAlwaysOpen() || openPreviews.contains(var5.getKey())) && this.hasPreview(var5))
             {
                 this.entries.add(Entry.preview(var5, var5.getPreviewHeight(this.getPreviewWidth())));
             }
@@ -1367,7 +1367,7 @@ public class GuiKirmod extends GuiScreen
             return;
         }
 
-        if (par3 == 0 && par1 < this.getEntryLeft(var14) + ARROW_W && this.hasPreview(var7))
+        if (par3 == 0 && par1 < this.getEntryLeft(var14) + ARROW_W && this.hasPreview(var7) && !var7.isPreviewAlwaysOpen())
         {
             this.playClick();
             this.togglePreview(var7);
@@ -2011,7 +2011,7 @@ public class GuiKirmod extends GuiScreen
 
         int var18 = left + 6;
 
-        if (this.hasPreview(module))
+        if (this.hasPreview(module) && !module.isPreviewAlwaysOpen())
         {
             // The dropdown's arrow: pointing right while closed, down while open.
             int var19 = y + ROW_H / 2;

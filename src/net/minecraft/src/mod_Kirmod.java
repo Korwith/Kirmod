@@ -45,6 +45,11 @@ import net.minecraft.client.Minecraft;
  *
  * The Music category (1.36) is not listed in the settings screen: its modules are set in the Music screen
  * (GuiKirmodMusic, the header's "Music..."), where the soundtrack is picked. KirMusic plays the music.
+ *   - KirModuleBackups         Auto Backup (Backups, 1.38; its panel has Backup Now and Browse Backups...)
+ *   - KirModuleBackupLimit     Keep Backups (Backups)
+ *   - KirModuleBackupIndicator Backup Indicator (Backups; the HUD icon, KirBackupHud)
+ *
+ * KirBackups makes the backups (.minecraft/backups/<world>/*.zip) and GuiKirmodBackups lists and restores them.
  *   - KirModuleRenderCrashGuard  Render Crash Guard (Other; from EndermanCrashFix)
  *   - KirModuleOptifineRenderFix OptiFine Render Fix (OptiFine Patches; KirPlayerManager sends chunks out to the render distance)
  *   - KirModuleMultiCoreChunks Multi-Core Chunks (OptiFine Patches; KirChunkBuilder, KirChunkCache, KirTessellator)
@@ -114,6 +119,9 @@ public class mod_Kirmod extends BaseMod
     public static final KirModuleIsometricDirection ISOMETRIC_DIRECTION = new KirModuleIsometricDirection();
     public static final KirModuleIsometricDistance ISOMETRIC_DISTANCE = new KirModuleIsometricDistance();
     public static final KirModulePanorama PANORAMA = new KirModulePanorama();
+    public static final KirModuleBackups AUTO_BACKUP = new KirModuleBackups();
+    public static final KirModuleBackupLimit BACKUP_LIMIT = new KirModuleBackupLimit();
+    public static final KirModuleBackupIndicator BACKUP_HUD = new KirModuleBackupIndicator();
     public static final KirModuleMenuDarkness MENU_DARKNESS = new KirModuleMenuDarkness();
     public static final KirModuleMenuBlur MENU_BLUR = new KirModuleMenuBlur();
     public static final KirModuleDarkTheme DARK_THEME = new KirModuleDarkTheme();
@@ -180,6 +188,9 @@ public class mod_Kirmod extends BaseMod
         registerModule(PANORAMA);
         registerModule(OPTIFINE_RENDER_FIX);
         registerModule(MULTICORE_CHUNKS);
+        registerModule(AUTO_BACKUP);
+        registerModule(BACKUP_LIMIT);
+        registerModule(BACKUP_HUD);
         registerModule(MENU_DARKNESS);
         registerModule(MENU_BLUR);
         registerModule(DARK_THEME);
@@ -310,6 +321,19 @@ public class mod_Kirmod extends BaseMod
         if (!KirFrameHook.isActive(mc))
         {
             frame(mc);
+        }
+
+        // After the frame is drawn, so the backup icon shows over the game and other screens (1.38).
+        if (AUTO_BACKUP.isEnabled())
+        {
+            try
+            {
+                KirBackupHud.drawHud(mc);
+            }
+            catch (Throwable var4)
+            {
+                ;
+            }
         }
 
         return true;
