@@ -256,6 +256,7 @@ public class mod_Kirmod extends BaseMod
     public void registerAnimation(Minecraft mc)
     {
         ModLoader.addAnimation(KirTexturePacks.getTickFX(mc));
+        KirFrameHook.install(mc);
 
         // The earliest point the menus can be darkened at startup, and again after a pack change (1.37).
         KirDarkMenus.reapply(mc);
@@ -303,6 +304,50 @@ public class mod_Kirmod extends BaseMod
 
     public boolean onTickInGame(float partialTicks, Minecraft mc)
     {
+        KirFrameHook.install(mc);
+
+        // ModLoader runs this after the frame is drawn; with the frame hook in place beforeFrame does the work.
+        if (!KirFrameHook.isActive(mc))
+        {
+            frame(mc);
+        }
+
+        return true;
+    }
+
+    public boolean onTickInGUI(float partialTicks, Minecraft mc, GuiScreen screen)
+    {
+        KirFrameHook.install(mc);
+
+        // onTickInGame already did it this frame if the player is in a world.
+        if (!KirFrameHook.isActive(mc) && mc.thePlayer.worldObj == null)
+        {
+            frame(mc);
+        }
+
+        return true;
+    }
+
+    /**
+     * Every frame right before it is drawn (KirFrameHook, 1.37), at the main menu too: screens swapped or
+     * textures changed here are already in the frame, so nothing flickers for a frame.
+     */
+    static void beforeFrame(Minecraft mc)
+    {
+        if (mc.thePlayer != null)
+        {
+            frame(mc);
+        }
+
+        if (DARK_THEME.enabled)
+        {
+            KirDarkMenus.update(mc);
+        }
+    }
+
+    /** The per-frame work while a player exists: from beforeFrame, or from ModLoader's hooks without it. */
+    private static void frame(Minecraft mc)
+    {
         // Commands run while GuiChat is still open and GuiChat closes itself afterwards, so the
         // settings screen is opened once the chat is gone.
         if (screenToOpen != null && mc.currentScreen == null)
@@ -311,22 +356,14 @@ public class mod_Kirmod extends BaseMod
             screenToOpen = null;
         }
 
-        KirHotkey.poll(mc);
-        updateModules(mc);
-        return true;
-    }
-
-    public boolean onTickInGUI(float partialTicks, Minecraft mc, GuiScreen screen)
-    {
-        if (screen != null && screen.getClass() == GuiOptions.class)
+        if (mc.currentScreen != null && mc.currentScreen.getClass() == GuiOptions.class)
         {
-            GuiKirmodOptions.replace(mc, (GuiOptions)screen);
+            GuiKirmodOptions.replace(mc, (GuiOptions)mc.currentScreen);
         }
 
-        // Only keeps track of held keys here; a key held as a screen closes doesn't fire.
+        // Only keeps track of held keys while a screen is open; a key held as a screen closes doesn't fire.
         KirHotkey.poll(mc);
         updateModules(mc);
-        return true;
     }
 
     private static void updateModules(Minecraft mc)

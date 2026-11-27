@@ -20,9 +20,9 @@ import org.lwjgl.opengl.GL11;
  * The textures stay changed for as long as the theme is on, whichever screen is open. (Before, they were
  * changed only while a settings screen was open; ModLoader runs its hooks after the frame is drawn, so a
  * screen's first frame was always drawn with the previous screen's textures.) They are written again when
- * the theme, the tint or the pack changes, right after Kirmod reloads the textures (reapply), every frame
- * while a screen is open and 20 times a second from KirTexturePacks' tick, which also runs at the main
- * menu: that covers textures reloaded behind Kirmod's back (F3+T, OptiFine's video settings).
+ * the theme, the tint or the pack changes, right after Kirmod reloads the textures (reapply), before every
+ * frame while a screen is open (KirFrameHook; the logo when the main menu opens) and 20 times a second from
+ * KirTexturePacks' tick: that covers textures reloaded behind Kirmod's back (F3+T, OptiFine's video settings).
  */
 public class KirDarkMenus
 {
@@ -47,10 +47,19 @@ public class KirDarkMenus
 
     private static boolean failed;
 
-    /** Every frame in a world (KirModuleDarkTheme.update): rewritten while a screen is open. */
+    /** The screen open at the last update, to notice a new one. */
+    private static GuiScreen lastScreen;
+
+    /**
+     * Every frame, right before it is drawn (mod_Kirmod.beforeFrame; without the frame hook, after it from
+     * KirModuleDarkTheme.update). Rewritten while a screen is open; the logo when the main menu opens.
+     */
     static void update(Minecraft mc)
     {
-        apply(mc, mc.currentScreen != null, mc.currentScreen instanceof GuiMainMenu);
+        GuiScreen var1 = mc.currentScreen;
+        boolean var2 = var1 != lastScreen;
+        lastScreen = var1;
+        apply(mc, var1 != null, var2 && var1 instanceof GuiMainMenu);
     }
 
     /** 20 times a second, also at the main menu (KirTexturePacks' tick hook). */

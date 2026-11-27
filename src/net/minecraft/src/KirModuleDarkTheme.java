@@ -42,7 +42,11 @@ public class KirModuleDarkTheme extends KirModule
     /** Darkens vanilla's menus (1.37); see KirDarkMenus. */
     public void update(Minecraft mc)
     {
-        KirDarkMenus.update(mc);
+        // With the frame hook, mod_Kirmod.beforeFrame does it before each frame instead, also at the main menu.
+        if (!KirFrameHook.isActive(mc))
+        {
+            KirDarkMenus.update(mc);
+        }
     }
 
     public boolean isDark()
