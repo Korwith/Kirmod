@@ -88,7 +88,8 @@ public class KirTheme
 
     /**
      * Lays the coat over a vanilla container panel already drawn (inventory.png, crafting.png...), whose
-     * corners are cut by two pixels, so the transparent corner pixels stay uncoated.
+     * corners are cut by two pixels, so the transparent corner pixels stay uncoated. With the panel's
+     * texture still bound, a panel KirDarkMenus has darkened already is only coated by what is left.
      */
     public static void coatPanel(int x1, int y1, int x2, int y2)
     {
@@ -106,7 +107,16 @@ public class KirTheme
             return;
         }
 
-        int coat = coatColor();
+        // The panel's texture may be darkened already (KirDarkMenus, 1.37): only make up the rest. Call this
+        // with that texture still bound, straight after drawing the panel.
+        float k = Math.min(1.0F, keep() / KirDarkMenus.boundTextureKeep());
+        int coat = Math.round((1.0F - k) * 255.0F) << 24;
+
+        if (coat == 0)
+        {
+            return;
+        }
+
         Gui.drawRect(x1 + 2, y1, x2 - 2, y1 + 1, coat);
         Gui.drawRect(x1 + 1, y1 + 1, x2 - 1, y1 + 2, coat);
 

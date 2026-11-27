@@ -23,6 +23,13 @@ import org.lwjgl.opengl.GL11;
  * the theme, the tint or the pack changes, right after Kirmod reloads the textures (reapply), before every
  * frame while a screen is open (KirFrameHook; the logo when the main menu opens) and 20 times a second from
  * KirTexturePacks' tick: that covers textures reloaded behind Kirmod's back (F3+T, OptiFine's video settings).
+ *
+ * Since 1.37 the container screens are darkened the same way: chests (container.png), the furnace,
+ * dispenser, crafting table, inventory, enchanting table, brewing stand, villager trading and the creative
+ * inventory. Only their panels are darkened; the sprites drawn over them (the furnace's flame and arrow,
+ * the brewing stand's bubbles, the trading arrows) keep their colors, like items do. Those textures are
+ * written when a container screen opens (before its first frame) and once a second while one is open, not
+ * every frame, as there are many of them and they are large in HD packs.
  */
 public class KirDarkMenus
 {
@@ -33,7 +40,38 @@ public class KirDarkMenus
     private static final Patch LANGUAGE = new Patch(GUI, 0, 106, 20, 20, null);
     private static final Patch BACKGROUND = new Patch("/gui/background.png", 0, 0, 0, 0, KirModuleChests.TEXTURE_DIR + "dark/background.png");
     private static final Patch LOGO = new Patch("/title/mclogo.png", 0, 0, 0, 0, null);
-    private static final Patch[] PATCHES = new Patch[] {BUTTONS, LANGUAGE, BACKGROUND, LOGO};
+
+    /** The container screens' panels (1.37), in 256ths like gui.png. */
+    private static final Patch[] CONTAINERS = new Patch[] {
+        new Patch("/gui/container.png", 0, 0, 176, 222, null),
+        new Patch("/gui/furnace.png", 0, 0, 176, 166, null),
+        new Patch("/gui/trap.png", 0, 0, 176, 166, null),
+        new Patch("/gui/crafting.png", 0, 0, 176, 166, null),
+        new Patch("/gui/inventory.png", 0, 0, 176, 166, null),
+        // The potion effects' backgrounds beside the inventory; their icons below are left alone.
+        new Patch("/gui/inventory.png", 0, 166, 140, 32, null),
+        // The panel and the three enchantment buttons below it.
+        new Patch("/gui/enchant.png", 0, 0, 176, 223, null),
+        new Patch("/gui/alchemy.png", 0, 0, 176, 166, null),
+        new Patch("/gui/trading.png", 0, 0, 176, 166, null),
+        // The creative inventory: its tabs and scroll knob, and each tab's panel.
+        new Patch("/gui/allitems.png", 0, 0, 0, 0, null),
+        new Patch("/gui/creative_inv/list_items.png", 0, 0, 0, 0, null),
+        new Patch("/gui/creative_inv/search.png", 0, 0, 0, 0, null),
+        new Patch("/gui/creative_inv/survival_inv.png", 0, 0, 0, 0, null)
+    };
+
+    private static final Patch[] PATCHES;
+
+    static
+    {
+        PATCHES = new Patch[4 + CONTAINERS.length];
+        PATCHES[0] = BUTTONS;
+        PATCHES[1] = LANGUAGE;
+        PATCHES[2] = BACKGROUND;
+        PATCHES[3] = LOGO;
+        System.arraycopy(CONTAINERS, 0, PATCHES, 4, CONTAINERS.length);
+    }
 
     /** The texture pack the images were read from. */
     private static Object pack;
@@ -41,25 +79,29 @@ public class KirDarkMenus
     /** What the textures hold now: "dark/<tint alpha>", or null for the pack's own pixels. */
     private static String applied;
 
-    /** gui.png's GL texture while it is darkened, else -1; and how much its button rows keep. */
-    private static int darkGuiTexture = -1;
-    private static float darkGuiKeep = 1.0F;
+    /** The GL textures darkened now (gui.png's button rows, the container panels), and how much they keep. */
+    private static int[] darkTextures = new int[0];
+    private static float darkKeep = 1.0F;
 
     private static boolean failed;
 
     /** The screen open at the last update, to notice a new one. */
     private static GuiScreen lastScreen;
 
+    /** Ticks since the container textures were last written while a container screen was open. */
+    private static int containerTicks;
+
     /**
      * Every frame, right before it is drawn (mod_Kirmod.beforeFrame; without the frame hook, after it from
-     * KirModuleDarkTheme.update). Rewritten while a screen is open; the logo when the main menu opens.
+     * KirModuleDarkTheme.update). Rewritten while a screen is open; the logo when the main menu opens, the
+     * container panels when a container screen opens.
      */
     static void update(Minecraft mc)
     {
         GuiScreen var1 = mc.currentScreen;
         boolean var2 = var1 != lastScreen;
         lastScreen = var1;
-        apply(mc, var1 != null, var2 && var1 instanceof GuiMainMenu);
+        apply(mc, var1 != null, var2 && var1 instanceof GuiMainMenu, var2 && var1 instanceof GuiContainer);
     }
 
     /** 20 times a second, also at the main menu (KirTexturePacks' tick hook). */
@@ -67,7 +109,22 @@ public class KirDarkMenus
     {
         if (mod_Kirmod.DARK_THEME.enabled)
         {
-            apply(mc, true, mc.currentScreen instanceof GuiMainMenu);
+            boolean var1 = false;
+
+            if (mc.currentScreen instanceof GuiContainer)
+            {
+                if (++containerTicks >= 20)
+                {
+                    containerTicks = 0;
+                    var1 = true;
+                }
+            }
+            else
+            {
+                containerTicks = 0;
+            }
+
+            apply(mc, true, mc.currentScreen instanceof GuiMainMenu, var1);
         }
     }
 
@@ -78,16 +135,16 @@ public class KirDarkMenus
 
         if (mod_Kirmod.DARK_THEME.enabled)
         {
-            apply(mc, true, true);
+            apply(mc, true, true, true);
         }
     }
 
     /**
      * Puts the textures in the state the theme wants. refresh writes them even if they should be in it
      * already (the pack may have uploaded its own again); the logo is only refreshed with refreshLogo, as
-     * it is only seen at the main menu and is the largest.
+     * it is only seen at the main menu and is the largest, and the container panels with refreshContainers.
      */
-    private static void apply(Minecraft mc, boolean refresh, boolean refreshLogo)
+    private static void apply(Minecraft mc, boolean refresh, boolean refreshLogo, boolean refreshContainers)
     {
         if (failed || mc.renderEngine == null || mc.texturePackList == null)
         {
@@ -132,6 +189,14 @@ public class KirDarkMenus
                 {
                     LOGO.write(mc.renderEngine, var6, var9);
                 }
+
+                if (var8 || refreshContainers)
+                {
+                    for (int var11 = 0; var11 < CONTAINERS.length; ++var11)
+                    {
+                        CONTAINERS[var11].writeSafely(mc.renderEngine, var6, var9);
+                    }
+                }
             }
             finally
             {
@@ -139,35 +204,68 @@ public class KirDarkMenus
             }
 
             applied = var7;
-            darkGuiTexture = var6 ? mc.renderEngine.getTexture(GUI) : -1;
-            darkGuiKeep = var9;
+            darkKeep = var9;
+            darkTextures = var6 ? darkTextureIds(mc.renderEngine) : new int[0];
         }
         catch (Throwable var12)
         {
             failed = true;
-            darkGuiTexture = -1;
+            darkTextures = new int[0];
             KirUtil.log("Could not apply the Dark Theme to the menus", var12);
         }
     }
 
+    /** The GL textures holding darkened pixels: gui.png and every container texture that could be written. */
+    private static int[] darkTextureIds(RenderEngine engine)
+    {
+        int[] var1 = new int[1 + CONTAINERS.length];
+        int var2 = 0;
+        var1[var2++] = engine.getTexture(GUI);
+
+        for (int var3 = 0; var3 < CONTAINERS.length; ++var3)
+        {
+            if (!CONTAINERS[var3].broken)
+            {
+                var1[var2++] = engine.getTexture(CONTAINERS[var3].texture);
+            }
+        }
+
+        int[] var4 = new int[var2];
+        System.arraycopy(var1, 0, var4, 0, var2);
+        return var4;
+    }
+
     /**
-     * How much of its brightness the bound texture's button rows already keep: below 1 while gui.png is
-     * bound and darkened. KirTheme.textureColor divides by it, so plugin buttons aren't darkened twice.
+     * How much of its brightness the bound texture already keeps: below 1 while gui.png (its button rows)
+     * or a container texture (its panel) is bound and darkened. KirTheme.textureColor and coatPanel divide
+     * by it, so plugin surfaces drawn from those textures aren't darkened twice.
      */
     static float boundTextureKeep()
     {
-        if (darkGuiTexture < 0 || GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D) != darkGuiTexture)
+        int[] var0 = darkTextures;
+
+        if (var0.length == 0)
         {
             return 1.0F;
         }
 
-        return darkGuiKeep;
+        int var1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+
+        for (int var2 = 0; var2 < var0.length; ++var2)
+        {
+            if (var0[var2] == var1)
+            {
+                return darkKeep;
+            }
+        }
+
+        return 1.0F;
     }
 
     /** One part of a texture: darkened (or replaced by darkImage) with the theme on, the pack's own with it off. */
     private static class Patch
     {
-        private final String texture;
+        final String texture;
 
         /** The part, in 256ths of the texture's width (gui.png's layout); w 0 is the whole texture. */
         private final int u;
@@ -177,6 +275,9 @@ public class KirDarkMenus
 
         /** Shown instead of the pack's pixels when dark, or null to darken the pack's. */
         private final String darkImage;
+
+        /** The texture couldn't be read or written (a pack without it, say): left as it is from then on. */
+        boolean broken;
 
         private BufferedImage packImage;
         private BufferedImage darkSource;
@@ -197,8 +298,28 @@ public class KirDarkMenus
 
         void forget()
         {
+            this.broken = false;
             this.packImage = null;
             this.bufferKey = null;
+        }
+
+        /** write, for a texture a pack may not have: a failure leaves this one patch out instead of the theme. */
+        void writeSafely(RenderEngine engine, boolean dark, float keep)
+        {
+            if (this.broken)
+            {
+                return;
+            }
+
+            try
+            {
+                this.write(engine, dark, keep);
+            }
+            catch (Throwable var5)
+            {
+                this.broken = true;
+                KirUtil.log("Could not apply the Dark Theme to " + this.texture, var5);
+            }
         }
 
         void write(RenderEngine engine, boolean dark, float keep) throws Exception
